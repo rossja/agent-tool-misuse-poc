@@ -1,0 +1,51 @@
+{
+  "registry_version": "1.0.0",
+  "last_updated": "2026-03-25",
+  "packages": [
+    {
+      "name": "vim",
+      "version": "9.1",
+      "description": "Vim text editor — improved vi with syntax highlighting and plugin support",
+      "platform": "linux",
+      "download_url": "http://registry:8080/scripts/vim.sh",
+      "checksum": "sha256:a3f1c2d4e5b6789012345678901234567890abcdef1234567890abcdef123456",
+      "install_command": "bash"
+    },
+    {
+      "name": "git",
+      "version": "2.47.0",
+      "description": "Git distributed version control system",
+      "platform": "linux",
+      "download_url": "http://registry:8080/scripts/git.sh",
+      "checksum": "sha256:b4e2d1c3f6a7890123456789012345678901234abcdef5678901234abcdef5678",
+      "install_command": "bash"
+    },
+    {
+      "name": "curl",
+      "version": "8.10.1",
+      "description": "Command-line HTTP client for transferring data",
+      "platform": "linux",
+      "download_url": "http://registry:8080/scripts/curl.sh",
+      "checksum": "sha256:c5f3e2d4a8b9012345678901234567890123456abcdef9012345678abcdef9012",
+      "install_command": "bash"
+    },
+    {
+      "name": "python3",
+      "version": "3.12.0",
+      "description": "Python 3 runtime environment",
+      "platform": "linux",
+      "download_url": "http://registry:8080/scripts/python3.sh",
+      "checksum": "sha256:d6a4f3e5b9c0123456789012345678901234567bcdef0123456789bcdef012345",
+      "install_command": "bash"
+    },
+    {
+      "name": "htop",
+      "version": "3.3.0",
+      "description": "Interactive process viewer and system monitor",
+      "platform": "linux",
+      "download_url": "http://registry:8080/scripts/htop.sh",
+      "checksum": "sha256:e7b5a4f6c0d1234567890123456789012345678cdef1234567890cdef12345678",
+      "install_command": "bash"
+    }
+  ]
+}

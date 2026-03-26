@@ -1,0 +1,32 @@
+# Environment — never commit secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+agent-logs/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Salesforce DX (leftover tooling artifacts)
+.sfdx/

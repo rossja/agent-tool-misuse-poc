@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACME Corp — IT Self-Service Portal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f4f5f7;
+      --surface: #ffffff;
+      --sidebar-bg: #1a2332;
+      --sidebar-text: #a8b4c6;
+      --sidebar-active: #ffffff;
+      --accent: #0052cc;
+      --accent-hover: #003d99;
+      --border: #dfe1e6;
+      --text: #172b4d;
+      --text-muted: #6b778c;
+      --user-bubble: #0052cc;
+      --agent-bubble: #f4f5f7;
+      --trace-bg: #fafbfc;
+      --trace-border: #e4e6ea;
+
+      --ev-action: #0052cc;
+      --ev-action-bg: #deebff;
+      --ev-tool-start: #006644;
+      --ev-tool-start-bg: #e3fcef;
+      --ev-tool-end: #5243aa;
+      --ev-tool-end-bg: #eae6ff;
+      --ev-warn: #bf360c;
+      --ev-warn-bg: #fff3e0;
+      --ev-error: #c0392b;
+      --ev-error-bg: #fdecea;
+      --ev-token: #37474f;
+      --ev-token-bg: #f5f5f5;
+    }
+
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+    /* ── Layout ── */
+    .layout { display: flex; height: 100vh; }
+
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+
+    .sidebar-logo {
+      padding: 20px 16px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-logo .company { color: #fff; font-weight: 700; font-size: 15px; letter-spacing: 0.3px; }
+    .sidebar-logo .portal { color: var(--sidebar-text); font-size: 11px; margin-top: 2px; }
+
+    .sidebar-nav { padding: 12px 0; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px;
+      color: var(--sidebar-text);
+      font-size: 13px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+    .nav-item.active { color: var(--sidebar-active); background: rgba(255,255,255,0.06); border-left-color: #4c9aff; }
+    .nav-item:hover:not(.active) { background: rgba(255,255,255,0.04); }
+    .nav-icon { width: 16px; text-align: center; font-size: 14px; }
+
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: var(--sidebar-text);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    /* ── Main area ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .topbar {
+      height: 52px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .topbar-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .topbar-subtitle { font-size: 12px; color: var(--text-muted); }
+    .topbar-spacer { flex: 1; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #36b37e;
+      display: inline-block;
+    }
+    .status-label { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Content panels ── */
+    .content { flex: 1; display: flex; overflow: hidden; }
+
+    /* Chat panel */
+    .chat-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg);
+    }
+
+    .message { display: flex; gap: 10px; max-width: 80%; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.agent { align-self: flex-start; }
+
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .message.user .avatar { background: var(--user-bubble); color: #fff; }
+    .message.agent .avatar { background: #dfe1e6; color: var(--text); }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .message.user .bubble { background: var(--user-bubble); color: #fff; border-bottom-right-radius: 4px; }
+    .message.agent .bubble { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+
+    .thinking-dots {
+      display: flex; gap: 4px; padding: 12px 14px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #aaa; animation: bounce 1.2s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+    .chat-input-area {
+      padding: 16px 20px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .chat-input {
+      flex: 1;
+      resize: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      max-height: 120px;
+      min-height: 42px;
+      line-height: 1.5;
+      transition: border-color 0.15s;
+    }
+    .chat-input:focus { border-color: var(--accent); }
+    .send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+      height: 42px;
+    }
+    .send-btn:hover { background: var(--accent-hover); }
+    .send-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* Trace panel */
+    .trace-panel {
+      width: 380px;
+      flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--trace-bg);
+    }
+
+    .trace-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--trace-border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+    }
+    .trace-header-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .trace-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 2px 6px; border-radius: 3px;
+      background: #ffe380; color: #7a4800;
+    }
+
+    .trace-events {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .trace-empty {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); font-size: 13px; text-align: center;
+      padding: 20px;
+    }
+
+    .trace-event {
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      border: 1px solid transparent;
+    }
+    .trace-event .ev-label {
+      font-weight: 700; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.6px; margin-bottom: 3px;
+    }
+    .trace-event .ev-body { word-break: break-all; white-space: pre-wrap; }
+    .trace-event.ev-action { background: var(--ev-action-bg); border-color: #b3d4ff; color: var(--ev-action); }
+    .trace-event.ev-tool-start { background: var(--ev-tool-start-bg); border-color: #abf5d1; color: var(--ev-tool-start); }
+    .trace-event.ev-tool-end { background: var(--ev-tool-end-bg); border-color: #c0b6f2; color: var(--ev-tool-end); }
+    .trace-event.ev-warn { background: var(--ev-warn-bg); border-color: #ffcc80; color: var(--ev-warn); }
+    .trace-event.ev-error { background: var(--ev-error-bg); border-color: #f5c6cb; color: var(--ev-error); }
+    .trace-event.ev-token { background: var(--ev-token-bg); border-color: #e0e0e0; color: var(--ev-token); }
+
+    /* Footer banner */
+    .demo-banner {
+      background: #172b4d;
+      color: #a8b4c6;
+      font-size: 11px;
+      text-align: center;
+      padding: 6px 20px;
+      flex-shrink: 0;
+      letter-spacing: 0.3px;
+    }
+    .demo-banner span { color: #ffe380; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="company">&#9632; ACME Corp</div>
+      <div class="portal">IT Self-Service Portal</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active">
+        <span class="nav-icon">&#128187;</span> Software Install
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">&#128221;</span> My Requests
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">&#128218;</span> Knowledge Base
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">&#128736;</span> Settings
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      Helpdesk AI v2.1<br/>
+      Powered by GPT-4o
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">Software Installation Assistant</div>
+        <div class="topbar-subtitle">Request software for your endpoint</div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <span class="status-dot"></span>
+      <span class="status-label">Agent online</span>
+    </header>
+
+    <div class="content">
+      <!-- Chat panel -->
+      <div class="chat-panel">
+        <div class="chat-messages" id="chatMessages">
+          <div class="message agent">
+            <div class="avatar">AI</div>
+            <div class="bubble">Hello! I&apos;m the ACME Corp IT helpdesk assistant. I can install approved software on your endpoint.
+
+What software would you like to install? I&apos;ll check our approved package registry and get it set up for you.</div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <textarea
+            class="chat-input"
+            id="chatInput"
+            placeholder="Ask me to install software..."
+            rows="1"
+          ></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+
+      <!-- Trace panel -->
+      <div class="trace-panel">
+        <div class="trace-header">
+          <div class="trace-header-title">Agent Reasoning Trace</div>
+          <div class="trace-badge">Demo Mode</div>
+        </div>
+        <div class="trace-events" id="traceEvents">
+          <div class="trace-empty" id="traceEmpty">
+            Reasoning events will appear here as the agent works.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-banner">
+      <span>OWASP GenAI Top 10 — ASI02 PoC</span> &nbsp;|&nbsp; Tool Misuse &amp; Exploitation &nbsp;|&nbsp; Intentionally Vulnerable Demo
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const chatMessages = document.getElementById('chatMessages');
+  const traceEvents  = document.getElementById('traceEvents');
+  const traceEmpty   = document.getElementById('traceEmpty');
+  const chatInput    = document.getElementById('chatInput');
+  const sendBtn      = document.getElementById('sendBtn');
+
+  // Conversation history sent to the backend on each request
+  const history = [];
+
+  // Allowed registry base URL for anomaly detection in the trace panel
+  const ALLOWED_REGISTRY = 'http://registry:8080';
+
+  chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+  });
+
+  function scrollChat() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function scrollTrace() {
+    traceEvents.scrollTop = traceEvents.scrollHeight;
+  }
+
+  function appendMessage(role, text) {
+    const wrapper = document.createElement('div');
+    wrapper.className = `message ${role}`;
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = role === 'user' ? 'You' : 'AI';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    wrapper.append(avatar, bubble);
+    chatMessages.appendChild(wrapper);
+    scrollChat();
+    return bubble;
+  }
+
+  function showThinking() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'message agent';
+    wrapper.id = 'thinkingMsg';
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = 'AI';
+    const dots = document.createElement('div');
+    dots.className = 'thinking-dots';
+    dots.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    wrapper.append(avatar, dots);
+    chatMessages.appendChild(wrapper);
+    scrollChat();
+  }
+
+  function hideThinking() {
+    const el = document.getElementById('thinkingMsg');
+    if (el) el.remove();
+  }
+
+  function addTraceEvent(cls, label, body) {
+    traceEmpty.style.display = 'none';
+    const ev = document.createElement('div');
+    ev.className = `trace-event ${cls}`;
+    ev.innerHTML = `<div class="ev-label">${label}</div><div class="ev-body">${escapeHtml(body)}</div>`;
+    traceEvents.appendChild(ev);
+    scrollTrace();
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function isNonRegistryUrl(text) {
+    const httpMatches = text.match(/https?:\/\/[^\s"']+/g) || [];
+    return httpMatches.some(url => !url.startsWith(ALLOWED_REGISTRY));
+  }
+
+  let tokenBuffer = '';
+  let tokenEl = null;
+
+  function flushTokenBuffer() {
+    tokenBuffer = '';
+    tokenEl = null;
+  }
+
+  async function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text || sendBtn.disabled) return;
+
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    sendBtn.disabled = true;
+    traceEmpty.style.display = 'flex';
+    traceEvents.querySelectorAll('.trace-event').forEach(e => e.remove());
+    flushTokenBuffer();
+
+    appendMessage('user', text);
+    showThinking();
+
+    const payload = { message: text, history: [...history] };
+    history.push({ role: 'user', content: text });
+
+    let agentResponse = '';
+
+    try {
+      const resp = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          let evt;
+          try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+          handleEvent(evt);
+          if (evt.type === 'agent_finish') agentResponse = evt.output;
+        }
+      }
+    } catch (err) {
+      hideThinking();
+      appendMessage('agent', 'Error: ' + err.message);
+      sendBtn.disabled = false;
+      return;
+    }
+
+    hideThinking();
+    if (agentResponse) {
+      appendMessage('agent', agentResponse);
+      history.push({ role: 'assistant', content: agentResponse });
+    }
+    sendBtn.disabled = false;
+    chatInput.focus();
+  }
+
+  function handleEvent(evt) {
+    switch (evt.type) {
+      case 'agent_action': {
+        const warn = (evt.tool === 'install_software' && isNonRegistryUrl(evt.input));
+        if (warn) {
+          addTraceEvent('ev-warn', '⚠ WARNING — Non-Registry URL Detected',
+            `Tool: ${evt.tool}\nInput: ${evt.input}`);
+        } else {
+          addTraceEvent('ev-action', '→ Agent Action',
+            `Tool: ${evt.tool}\nInput: ${evt.input}`);
+        }
+        break;
+      }
+      case 'tool_start':
+        addTraceEvent('ev-tool-start', '⚙ Tool Starting', `${evt.tool}\n${evt.input}`);
+        break;
+      case 'tool_end':
+        addTraceEvent('ev-tool-end', '✓ Tool Result', evt.output);
+        break;
+      case 'tool_error':
+        addTraceEvent('ev-error', '✗ Tool Error', evt.error);
+        break;
+      case 'token':
+        // Accumulate streaming tokens into a single trace event
+        if (!tokenEl) {
+          traceEmpty.style.display = 'none';
+          const ev = document.createElement('div');
+          ev.className = 'trace-event ev-token';
+          ev.innerHTML = '<div class="ev-label">✎ Generating Response</div><div class="ev-body" id="tokenBody"></div>';
+          traceEvents.appendChild(ev);
+          tokenEl = document.getElementById('tokenBody');
+          scrollTrace();
+        }
+        tokenBuffer += evt.content;
+        tokenEl.textContent = tokenBuffer;
+        scrollTrace();
+        break;
+      case 'agent_finish':
+        flushTokenBuffer();
+        addTraceEvent('ev-action', '✔ Agent Finished', evt.output.substring(0, 300) + (evt.output.length > 300 ? '…' : ''));
+        break;
+      case 'error':
+        addTraceEvent('ev-error', '✗ Error', evt.content);
+        break;
+    }
+  }
+</script>
+</body>
+</html>
